@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 
 class User:
@@ -23,14 +24,14 @@ def save_user(connection, user):
     connection.commit()
 
 
-connection = sqlite3.connect(":memory:")
-connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Аня",))
-connection.commit()
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
 
-# Главное в этом уроке: изменение объекта и сохранение — два шага.
+
 user = get_user_by_id(connection, 1)
-user.name = "Анна"
+user.name = user.name + "!"
 print("В объекте:", user.name)
 print("В базе до сохранения:", get_user_by_id(connection, 1).name)
 

@@ -1,4 +1,7 @@
-from sqlalchemy import Integer, String, create_engine
+import sqlite3
+from pathlib import Path
+
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import DeclarativeBase, mapped_column
 
 
@@ -6,7 +9,6 @@ class Base(DeclarativeBase):
     pass
 
 
-# Главное в этом уроке: класс описывает таблицу и её колонки.
 class User(Base):
     __tablename__ = "users"
 
@@ -14,9 +16,13 @@ class User(Base):
     name = mapped_column(String, nullable=False)
 
 
-engine = create_engine("sqlite:///:memory:", echo=True)
-Base.metadata.create_all(engine)
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
+row = connection.execute("SELECT id, name FROM users WHERE id = 1").fetchone()
+connection.close()
 
-user = User(id=1, name="Аня")
+user = User(id=row[0], name=row[1])
 print(user.id, user.name)
-print("Объект создан в Python. Строку в БД мы ещё не добавляли.")
+print("Модель соответствует таблице:", User.__tablename__)

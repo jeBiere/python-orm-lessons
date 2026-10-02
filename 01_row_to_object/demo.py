@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 
 class User:
@@ -18,19 +19,17 @@ def get_user_by_id(connection, user_id):
     return User(id=row[0], name=row[1])
 
 
-# Знакомая подготовка: таблица и одна строка.
-connection = sqlite3.connect(":memory:")
-connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Аня",))
-connection.commit()
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
 
-# Главное в этом уроке: одни данные, два способа представления.
+
 row = connection.execute("SELECT id, name FROM users WHERE id = 1").fetchone()
 print("Кортеж:", row)
 print("Имя через индекс:", row[1])
 
 user = get_user_by_id(connection, 1)
-print("Объект:", type(user).__name__)
 print("Имя через атрибут:", user.name)
 print("Несуществующий пользователь:", get_user_by_id(connection, 999))
 

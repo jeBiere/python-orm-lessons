@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sqlalchemy import Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
@@ -13,19 +15,17 @@ class User(Base):
     name = mapped_column(String, nullable=False)
 
 
-engine = create_engine("sqlite:///:memory:", echo=True)
-Base.metadata.create_all(engine)
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+engine = create_engine(f"sqlite:///{database_path}", echo=True)
+
 
 with Session(engine) as session:
-    session.add(User(name="Аня"))
+    user = session.get(User, 2)
+    user.name = user.name + "!"
     session.commit()
 
-# Главное в этом уроке: меняем атрибут загруженного объекта.
 with Session(engine) as session:
-    user = session.get(User, 1)
-    user.name = "Анна"
-    session.commit()
-
-with Session(engine) as session:
-    saved_user = session.get(User, 1)
+    saved_user = session.get(User, 2)
     print("В базе после сохранения:", saved_user.name)

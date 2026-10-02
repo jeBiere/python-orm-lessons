@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sqlalchemy import Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
@@ -6,34 +8,39 @@ class Base(DeclarativeBase):
     pass
 
 
-class User(Base):
-    __tablename__ = "users"
+class Book(Base):
+    __tablename__ = "books"
 
     id = mapped_column(Integer, primary_key=True)
-    name = mapped_column(String, nullable=False)
+    title = mapped_column(String, nullable=False)
+    pages = mapped_column(Integer, nullable=False)
 
 
-def rename_user(session, user_id, new_name):
-    # TODO: получи объект, измени имя и сохрани изменение.
-    # Верни True при успехе или False, если пользователя нет.
-    raise NotImplementedError("Допиши rename_user")
+def swap_titles(session, first_id, second_id):
+    # TODO: обменяй только названия, сохрани и верни True.
+    # TODO: если любой книги нет, ничего не меняй и верни False.
+    raise NotImplementedError("Допиши swap_titles")
 
 
-engine = create_engine("sqlite:///:memory:", echo=True)
-Base.metadata.create_all(engine)
-
-with Session(engine) as session:
-    session.add(User(name="Аня"))
-    session.commit()
-
-with Session(engine) as session:
-    renamed = rename_user(session, 1, "Анна")
-    assert renamed is True
-    missing_user_renamed = rename_user(session, 999, "Нина")
-    assert missing_user_renamed is False
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+engine = create_engine(f"sqlite:///{database_path}", echo=True)
 
 with Session(engine) as session:
-    user = session.get(User, 1)
-    assert user.name == "Анна", "Новое имя должно сохраниться в БД"
-    print(user.name)
-    print("Готово!")
+    first = session.get(Book, 1)
+    second = session.get(Book, 2)
+    first_title, first_pages = first.title, first.pages
+    second_title, second_pages = second.title, second.pages
+    swapped = swap_titles(session, 1, 2)
+    assert swapped is True
+    failed_swap = swap_titles(session, 1, 999)
+    assert failed_swap is False
+
+with Session(engine) as session:
+    first = session.get(Book, 1)
+    second = session.get(Book, 2)
+    assert first.title == second_title and first.pages == first_pages
+    assert second.title == first_title and second.pages == second_pages
+    print(first.id, first.title, first.pages)
+    print(second.id, second.title, second.pages)

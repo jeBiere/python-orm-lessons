@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 
 class User:
@@ -10,7 +11,7 @@ class User:
 def get_users(connection):
     rows = connection.execute("SELECT id, name FROM users ORDER BY id").fetchall()
 
-    # Главное в этом уроке: превращаем каждую строку в объект.
+
     users = []
     for row in rows:
         user = User(id=row[0], name=row[1])
@@ -19,11 +20,10 @@ def get_users(connection):
     return users
 
 
-connection = sqlite3.connect(":memory:")
-connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Аня",))
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Боря",))
-connection.commit()
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
 
 users = get_users(connection)
 for user in users:

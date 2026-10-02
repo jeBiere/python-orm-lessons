@@ -1,41 +1,41 @@
 import sqlite3
+from pathlib import Path
 
 
-class User:
-    def __init__(self, id, name):
+class Book:
+    def __init__(self, id, title, pages):
         self.id = id
-        self.name = name
+        self.title = title
+        self.pages = pages
 
 
-def get_user_by_id(connection, user_id):
+def get_book_by_id(connection, book_id):
     row = connection.execute(
-        "SELECT id, name FROM users WHERE id = ?", (user_id,)
+        "SELECT id, title, pages FROM books WHERE id = ?", (book_id,)
     ).fetchone()
     if row is None:
         return None
-    return User(id=row[0], name=row[1])
+    return Book(id=row[0], title=row[1], pages=row[2])
 
 
-def save_user(connection, user):
-    # TODO: обнови существующую строку по user.id и вызови commit().
-    raise NotImplementedError("Допиши save_user")
+def add_pages(connection, book_id, extra_pages):
+    book = get_book_by_id(connection, book_id)
+    book.pages += extra_pages
+    # TODO: сохрани изменённое pages в существующей строке по book.id.
+    connection.commit()
 
 
-connection = sqlite3.connect(":memory:")
-connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Аня",))
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Боря",))
-connection.commit()
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
 
-user = get_user_by_id(connection, 1)
-user.name = "Анна"
-print("В объекте:", user.name)
-print("В базе до сохранения:", get_user_by_id(connection, 1).name)
-
-save_user(connection, user)
-saved_user = get_user_by_id(connection, 1)
-assert saved_user.name == "Анна", "Перечитай строку: имя должно сохраниться"
-assert get_user_by_id(connection, 2).name == "Боря", "Измениться должна только Аня"
-print("В базе после сохранения:", saved_user.name)
-print("Готово!")
+pages_before = get_book_by_id(connection, 1).pages
+other_pages_before = get_book_by_id(connection, 2).pages
+print("До исправления:", pages_before)
+add_pages(connection, 1, 20)
+saved_book = get_book_by_id(connection, 1)
+print("После повторного чтения:", saved_book.pages)
+assert saved_book.pages == pages_before + 20, "Исправление должно сохраниться в БД"
+assert get_book_by_id(connection, 2).pages == other_pages_before, "Другая книга не менялась"
 connection.close()

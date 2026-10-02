@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from sqlalchemy import Integer, String, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
@@ -6,39 +8,32 @@ class Base(DeclarativeBase):
     pass
 
 
-class User(Base):
-    __tablename__ = "users"
+class Book(Base):
+    __tablename__ = "books"
 
     id = mapped_column(Integer, primary_key=True)
-    name = mapped_column(String, nullable=False)
+    title = mapped_column(String, nullable=False)
+    pages = mapped_column(Integer, nullable=False)
 
 
-def get_users_by_name(session, name):
-    # TODO: опиши запрос с условием по имени и сортировкой по id.
-    # Выполни его через session и верни список объектов User.
-    raise NotImplementedError("Допиши get_users_by_name")
+def find_books_for_weekend(session, max_pages):
+    # TODO: через ORM получи книги с 0 < pages <= max_pages по возрастанию pages.
+    # TODO: верни список Book; если совпадений нет — [].
+    raise NotImplementedError("Допиши find_books_for_weekend")
 
 
-engine = create_engine("sqlite:///:memory:", echo=True)
-Base.metadata.create_all(engine)
-
-with Session(engine) as session:
-    session.add(User(name="Аня"))
-    session.add(User(name="Боря"))
-    session.add(User(name="Аня"))
-    session.commit()
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+engine = create_engine(f"sqlite:///{database_path}", echo=True)
 
 with Session(engine) as session:
-    users = get_users_by_name(session, "Аня")
-    assert isinstance(users, list), "Нужен список объектов"
-    assert len(users) == 2, "В базе две Ани"
-    assert users[0].id == 1 and users[0].name == "Аня"
-    assert users[1].id == 3 and users[1].name == "Аня"
-    for user in users:
-        assert isinstance(user, User), "Элемент списка должен быть объектом User"
-        print(user.id, user.name)
-
-    missing_users = get_users_by_name(session, "Нина")
-    assert missing_users == [], "Нет совпадений — пустой список"
-    print(missing_users)
-    print("Готово!")
+    books = find_books_for_weekend(session, 120)
+    assert books, "В учебной базе есть подходящие книги"
+    previous_pages = 0
+    for book in books:
+        assert 0 < book.pages <= 120, "Нужна готовая книга не длиннее 120 страниц"
+        assert book.pages >= previous_pages, "Сначала самая короткая книга"
+        print(book.title, book.pages)
+        previous_pages = book.pages
+    assert find_books_for_weekend(session, 0) == [], "Черновик не подходит читателю"

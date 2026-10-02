@@ -1,31 +1,32 @@
 import sqlite3
+from pathlib import Path
 
 
-class User:
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
+class Book:
+    # TODO: создай конструктор Book с атрибутами id, title и pages.
+    pass
 
 
-def get_user_by_name(connection, name):
-    # TODO: SELECT с условием по имени, затем строка -> User.
-    # Если строки нет, верни None. Используй параметр ?, как раньше.
-    raise NotImplementedError("Допиши get_user_by_name")
+def get_book_by_id(connection, book_id):
+    row = connection.execute(
+        "SELECT title, pages, id FROM books WHERE id = ?", (book_id,)
+    ).fetchone()
+    return row  # TODO: верни Book из строки (title, pages, id) или None, если строки нет.
 
 
-connection = sqlite3.connect(":memory:")
-connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Аня",))
-connection.execute("INSERT INTO users (name) VALUES (?)", ("Боря",))
-connection.commit()
+def book_card(book):
+    return f"«{book.title}» — {book.pages} стр."
 
-user = get_user_by_name(connection, "Боря")
-assert isinstance(user, User), "Функция должна вернуть объект User"
-assert user.id == 2 and user.name == "Боря"
-print(user.id, user.name)
 
-missing_user = get_user_by_name(connection, "Нина")
-assert missing_user is None, "Если строки нет, нужно вернуть None"
-print(missing_user)
-print("Готово!")
+database_path = Path(__file__).resolve().parent.parent / "library.db"
+if not database_path.is_file():
+    raise SystemExit("Сначала запусти: python 00_create_database/setup.py")
+connection = sqlite3.connect(database_path)
+
+book = get_book_by_id(connection, 1)
+assert isinstance(book, Book), "Карточке нужен объект Book, а не кортеж"
+assert book.id == 1
+assert isinstance(book.title, str) and isinstance(book.pages, int)
+print(book_card(book))
+assert get_book_by_id(connection, 999) is None
 connection.close()
