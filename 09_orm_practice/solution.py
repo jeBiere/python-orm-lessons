@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import Integer, String, create_engine, select
+from sqlalchemy import Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, mapped_column
 
 
@@ -17,8 +17,7 @@ class Book(Base):
 
 
 def get_all_books(session):
-    query = select(Book).order_by(Book.id)
-    return session.scalars(query).all()
+    return session.query(Book).order_by(Book.id).all()
 
 
 def get_book_by_id(session, book_id):
@@ -26,12 +25,12 @@ def get_book_by_id(session, book_id):
 
 
 def find_books_by_pages(session, min_pages, max_pages):
-    query = (
-        select(Book)
-        .where(Book.pages >= min_pages, Book.pages <= max_pages)
+    return (
+        session.query(Book)
+        .filter(Book.pages >= min_pages, Book.pages <= max_pages)
         .order_by(Book.pages)
+        .all()
     )
-    return session.scalars(query).all()
 
 
 def create_book(session, title, pages):
@@ -68,6 +67,9 @@ engine = create_engine(f"sqlite:///{database_path}", echo=True)
 
 
 # Практика: каталог библиотеки. Решение для преподавателя.
+# Для заданий 1 и 4 используется session.query(Book): запрос объектов Book.
+# filter задаёт условия, order_by — сортировку, all возвращает список объектов.
+# Это другой способ выборки; если его ещё не проходили, сначала разбери его.
 # Запуск из корня проекта: python 09_orm_practice/solution.py
 
 if __name__ == "__main__":
